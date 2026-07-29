@@ -1,0 +1,28 @@
+---
+- name: Désactiver et masquer les services inutiles sur un serveur
+  hosts: all_servers
+  become: true
+  vars:
+    unnecessary_services:
+      - cups
+      - avahi-daemon
+      - bluetooth
+
+  tasks:
+    - name: Vérifier si le service est installé/actif
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+      loop: "{{ unnecessary_services }}"
+      register: service_check
+      ignore_errors: true
+      changed_when: false
+
+    - name: Arrêter et désactiver les services inutiles (si présents)
+      ansible.builtin.systemd:
+        name: "{{ item.item }}"
+        state: stopped
+        enabled: false
+        masked: true
+      loop: "{{ service_check.results }}"
+      when: item.status is defined
+      ignore_errors: true

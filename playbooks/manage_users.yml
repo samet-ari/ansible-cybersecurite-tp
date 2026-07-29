@@ -1,0 +1,51 @@
+---
+- name: Gérer les utilisateurs - suppression des comptes inutiles et création de l'administrateur
+  hosts: all_servers
+  become: true
+  vars:
+    unnecessary_users:
+      - games
+      - news
+      - uucp
+      - gopher
+
+  tasks:
+    - name: Supprimer les comptes utilisateurs inutiles ou à risque
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: absent
+        remove: true
+      loop: "{{ unnecessary_users }}"
+      ignore_errors: true
+
+    - name: S'assurer que le groupe sudo existe (Debian)
+      ansible.builtin.group:
+        name: sudo
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: S'assurer que le groupe wheel existe (RedHat)
+      ansible.builtin.group:
+        name: wheel
+        state: present
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Créer l'utilisateur administrateur dédié (Debian)
+      ansible.builtin.user:
+        name: "{{ admin_user }}"
+        password: "{{ admin_password_hash }}"
+        groups: sudo
+        append: true
+        shell: /bin/bash
+        create_home: true
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Créer l'utilisateur administrateur dédié (RedHat)
+      ansible.builtin.user:
+        name: "{{ admin_user }}"
+        password: "{{ admin_password_hash }}"
+        groups: wheel
+        append: true
+        shell: /bin/bash
+        create_home: true
+      when: ansible_facts['os_family'] == "RedHat"

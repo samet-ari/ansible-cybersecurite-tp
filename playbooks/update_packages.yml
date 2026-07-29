@@ -1,0 +1,16 @@
+---
+- name: Mettre à jour les paquets système (multi-distribution)
+  hosts: all_servers
+  become: true
+  tasks:
+    - name: Mise à jour via apt (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: yes
+        upgrade: dist
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Mise à jour via dnf (RedHat/CentOS/Rocky)
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+      when: ansible_facts['os_family'] == "RedHat"

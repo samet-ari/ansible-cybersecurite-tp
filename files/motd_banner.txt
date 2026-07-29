@@ -1,0 +1,4 @@
+=================================
+ Ce serveur est géré par Ansible
+ La Plateforme_ - Projet Cybersécurité
+=================================

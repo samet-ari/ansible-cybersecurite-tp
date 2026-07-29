@@ -1,0 +1,18 @@
+---
+- name: Vérifier l'état des services critiques
+  hosts: all_servers
+  become: true
+  vars:
+    services_to_check:
+      - sshd
+
+  tasks:
+    - name: Vérifier que le processus sshd est actif
+      ansible.builtin.command: pgrep -x sshd
+      register: sshd_check
+      changed_when: false
+      failed_when: false
+
+    - name: Afficher l'état du service
+      ansible.builtin.debug:
+        msg: "sshd : {{ 'actif (PID ' + sshd_check.stdout_lines[0] + ')' if sshd_check.rc == 0 else 'inactif' }}"

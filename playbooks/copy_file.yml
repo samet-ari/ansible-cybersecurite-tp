@@ -1,0 +1,12 @@
+---
+- name: Copier un fichier depuis le contrôleur vers les cibles
+  hosts: all_servers
+  become: true
+  tasks:
+    - name: Déployer la bannière MOTD
+      ansible.builtin.copy:
+        src: ../files/motd_banner.txt
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: '0644'

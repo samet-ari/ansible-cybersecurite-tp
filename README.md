@@ -2,7 +2,7 @@
 
 ## Contexte
 
-Ce projet a été réalisé dans le cadre d'un TP à La Plateforme_ (Marseille).
+Ce projet a été réalisé dans le cadre d'un TP à La Plateforme_.
 Le scénario : au sein d'une entreprise fictive nommée **Starfleet**, une équipe
 d'administrateurs système et sécurité utilise Ansible pour automatiser le
 durcissement (hardening), la supervision et la réponse à incident sur une

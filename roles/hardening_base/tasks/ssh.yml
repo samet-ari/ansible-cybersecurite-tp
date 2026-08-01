@@ -1,0 +1,28 @@
+---
+- name: Désactiver la connexion de l'utilisateur root
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: Recharger SSH
+
+- name: Désactiver l'authentification par mot de passe
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: Recharger SSH
+
+- name: Désactiver X11Forwarding
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?X11Forwarding'
+    line: 'X11Forwarding no'
+    state: present
+  notify: Recharger SSH
+
+- name: Vérifier la syntaxe de la configuration SSH avant rechargement
+  ansible.builtin.command: sshd -t
+  changed_when: false

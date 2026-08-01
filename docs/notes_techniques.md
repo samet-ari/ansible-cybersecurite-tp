@@ -34,3 +34,22 @@ n'affecteraient pas un déploiement réel sur des machines virtuelles Linux
 classiques avec systemd. Elles illustrent cependant l'importance de bien
 connaître son environnement cible avant d'automatiser, et la nécessité de
 prévoir une gestion d'erreur robuste dans les playbooks.
+
+## Filebeat (Job 3.1)
+
+L'installation du paquet et le déploiement de la configuration via template
+Jinja2 (`filebeat.yml.j2`) ont fonctionné sans problème sur les trois cibles.
+Le démarrage/redémarrage du service Filebeat via `systemd` échoue avec
+*"Service is in unknown state"*, cohérent avec l'absence de systemd dans ces
+conteneurs (même limitation que documentée plus haut). Le playbook est
+fonctionnel tel quel dans un environnement de production standard.
+
+## Durcissement noyau - sysctl (Job 3.3)
+
+L'application des paramètres `sysctl` (`net.ipv4.tcp_syncookies`, etc.) échoue
+avec *"permission denied"* dans les conteneurs Docker : la modification des
+paramètres réseau du noyau nécessite un accès étendu au namespace réseau
+(capability `NET_ADMIN` ou conteneur `--privileged`), non accordé par défaut.
+Les valeurs sont néanmoins correctement écrites dans `/etc/sysctl.conf` par
+Ansible - seul le rechargement à chaud (`sysctl --system`) échoue. Sur une VM
+de production, cette étape fonctionne normalement.

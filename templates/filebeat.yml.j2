@@ -1,0 +1,37 @@
+# Fichier généré automatiquement par Ansible - ne pas modifier manuellement
+# Hôte : {{ inventory_hostname }}
+
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/auth.log
+      - /var/log/syslog
+
+filebeat.modules:
+  - module: system
+    syslog:
+      enabled: true
+    auth:
+      enabled: true
+
+{% if ansible_facts['os_family'] == "RedHat" %}
+  - module: auditd
+    log:
+      enabled: true
+{% endif %}
+
+output.console:
+  enabled: true
+  pretty: true
+
+# Destination fictive simulée (dans un environnement réel : output.elasticsearch)
+# output.logstash:
+#   hosts: ["logstash-fictif.starfleet.local:5044"]
+
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7

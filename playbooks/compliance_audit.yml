@@ -1,0 +1,49 @@
+---
+- name: Effectuer un audit de conformité basique
+  hosts: all_servers
+  become: true
+  vars:
+    critical_files:
+      - /etc/passwd
+      - /etc/shadow
+      - /etc/sudoers
+      - /etc/ssh/sshd_config
+
+  tasks:
+    - name: Vérifier l'existence et les permissions des fichiers critiques
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop: "{{ critical_files }}"
+      register: file_stats
+
+    - name: Afficher les permissions des fichiers critiques
+      ansible.builtin.debug:
+        msg: >-
+          {{ item.item }} :
+          {{ 'existe, mode ' + item.stat.mode if item.stat.exists
+             else 'ABSENT !' }}
+      loop: "{{ file_stats.results }}"
+
+    - name: Rechercher les utilisateurs avec un mot de passe vide
+      ansible.builtin.shell: |
+        awk -F: '($2 == "" ) { print $1 }' /etc/shadow
+      register: empty_password_users
+      changed_when: false
+
+    - name: Afficher les utilisateurs à mot de passe vide
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'Aucun utilisateur à mot de passe vide' if empty_password_users.stdout == ''
+             else 'ATTENTION - comptes à mot de passe vide : ' + empty_password_users.stdout }}
+
+    - name: Rechercher les répertoires avec permissions 777
+      ansible.builtin.shell: |
+        find / -xdev -type d -perm 0777 2>/dev/null
+      register: world_writable_dirs
+      changed_when: false
+
+    - name: Afficher les répertoires avec permissions 777
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'Aucun répertoire 777 trouvé' if world_writable_dirs.stdout == ''
+             else 'ATTENTION - répertoires 777 : ' + world_writable_dirs.stdout }}

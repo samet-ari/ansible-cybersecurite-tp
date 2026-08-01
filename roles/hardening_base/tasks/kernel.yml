@@ -1,0 +1,31 @@
+---
+- name: Appliquer les paramètres de durcissement du noyau
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.conf
+    state: present
+    reload: true
+  loop: "{{ sysctl_settings }}"
+  ignore_errors: true
+
+- name: Configurer la longueur minimale du mot de passe (login.defs)
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: '^PASS_MIN_LEN'
+    line: 'PASS_MIN_LEN   12'
+    state: present
+
+- name: Configurer l'expiration maximale du mot de passe (login.defs)
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: '^PASS_MAX_DAYS'
+    line: 'PASS_MAX_DAYS   90'
+    state: present
+
+- name: Configurer le délai minimal entre changements (login.defs)
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: '^PASS_MIN_DAYS'
+    line: 'PASS_MIN_DAYS   7'
+    state: present

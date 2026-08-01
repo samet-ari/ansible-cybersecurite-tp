@@ -1,0 +1,7 @@
+---
+# NOTE : dans l'environnement de conteneurs Docker du TP, sshd tourne en PID 1
+# (pas de systemd). Un signal SIGHUP recharge la configuration sans arrêter
+# le conteneur.
+- name: Recharger SSH
+  ansible.builtin.command: pkill -HUP -x sshd
+  changed_when: false

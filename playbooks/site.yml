@@ -1,0 +1,6 @@
+---
+- name: Playbook principal - applique le rôle hardening_base
+  hosts: all_servers
+  become: true
+  roles:
+    - hardening_base

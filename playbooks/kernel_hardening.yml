@@ -1,0 +1,74 @@
+---
+- name: Durcir les paramètres noyau et les politiques de mot de passe
+  hosts: all_servers
+  become: true
+  vars:
+    sysctl_settings:
+      - { name: 'net.ipv4.tcp_syncookies', value: '1' }
+      - { name: 'net.ipv4.ip_forward', value: '0' }
+      - { name: 'net.ipv4.conf.all.accept_redirects', value: '0' }
+      - { name: 'net.ipv4.conf.all.send_redirects', value: '0' }
+      - { name: 'net.ipv4.conf.all.accept_source_route', value: '0' }
+      - { name: 'net.ipv4.icmp_echo_ignore_broadcasts', value: '1' }
+
+  tasks:
+    - name: Appliquer les paramètres de durcissement du noyau
+      ansible.posix.sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        sysctl_file: /etc/sysctl.conf
+        state: present
+        reload: true
+      loop: "{{ sysctl_settings }}"
+      ignore_errors: true
+
+    - name: Configurer la longueur minimale du mot de passe (login.defs)
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MIN_LEN'
+        line: 'PASS_MIN_LEN   12'
+        state: present
+
+    - name: Configurer l'expiration maximale du mot de passe (login.defs)
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MAX_DAYS'
+        line: 'PASS_MAX_DAYS   90'
+        state: present
+
+    - name: Configurer le délai minimal entre changements (login.defs)
+      ansible.builtin.lineinfile:
+        path: /etc/login.defs
+        regexp: '^PASS_MIN_DAYS'
+        line: 'PASS_MIN_DAYS   7'
+        state: present
+
+    - name: Installer libpam-pwquality (Debian) pour la complexité des mots de passe
+      ansible.builtin.apt:
+        name: libpam-pwquality
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Installer pam_pwquality (RedHat) pour la complexité des mots de passe
+      ansible.builtin.dnf:
+        name: libpwquality
+        state: present
+      when: ansible_facts['os_family'] == "RedHat"
+      ignore_errors: true
+
+    - name: Configurer la complexité des mots de passe (Debian - common-password)
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/common-password
+        regexp: '^password\s+requisite\s+pam_pwquality\.so'
+        line: 'password requisite pam_pwquality.so retry=3 minlen=12 difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1'
+        insertafter: '^password\s+requisite\s+pam_pwhistory\.so'
+      when: ansible_facts['os_family'] == "Debian"
+      ignore_errors: true
+
+    - name: Configurer l'historique des mots de passe (Debian - common-password)
+      ansible.builtin.lineinfile:
+        path: /etc/pam.d/common-password
+        regexp: '^password\s+\[success=1 default=ignore\]\s+pam_unix\.so'
+        line: 'password [success=1 default=ignore] pam_unix.so obscure use_authtok try_first_pass sha512 remember=5'
+      when: ansible_facts['os_family'] == "Debian"
+      ignore_errors: true

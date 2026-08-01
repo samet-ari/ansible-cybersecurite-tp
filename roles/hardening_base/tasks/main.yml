@@ -1,0 +1,12 @@
+---
+# Point d'entrée du rôle hardening_base
+# Regroupe l'ensemble des tâches de durcissement système
+
+- name: Inclure la gestion des utilisateurs
+  ansible.builtin.import_tasks: users.yml
+
+- name: Inclure le durcissement SSH
+  ansible.builtin.import_tasks: ssh.yml
+
+- name: Inclure le durcissement noyau et mots de passe
+  ansible.builtin.import_tasks: kernel.yml

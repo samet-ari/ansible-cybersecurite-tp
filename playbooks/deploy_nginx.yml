@@ -1,0 +1,68 @@
+---
+- name: Déployer une application web sécurisée avec Nginx et HTTPS
+  hosts: web1
+  become: true
+  vars:
+    ssl_dir: /etc/nginx/ssl
+    domain_name: web1.starfleet.local
+
+  tasks:
+    - name: Installer Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Installer OpenSSL
+      ansible.builtin.apt:
+        name: openssl
+        state: present
+
+    - name: Créer le répertoire pour le certificat SSL
+      ansible.builtin.file:
+        path: "{{ ssl_dir }}"
+        state: directory
+        mode: '0700'
+        owner: root
+        group: root
+
+    - name: Générer une clé privée et un certificat auto-signé
+      ansible.builtin.command: >
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048
+        -keyout {{ ssl_dir }}/nginx-selfsigned.key
+        -out {{ ssl_dir }}/nginx-selfsigned.crt
+        -subj "/C=FR/ST=PACA/L=Marseille/O=Starfleet/CN={{ domain_name }}"
+      args:
+        creates: "{{ ssl_dir }}/nginx-selfsigned.crt"
+
+    - name: Déployer la page HTML statique
+      ansible.builtin.copy:
+        src: ../files/web/index.html
+        dest: /var/www/html/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Déployer la configuration Nginx (HTTPS)
+      ansible.builtin.template:
+        src: ../templates/nginx_site.conf.j2
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Recharger Nginx
+
+    - name: Vérifier la syntaxe de la configuration Nginx
+      ansible.builtin.command: nginx -t
+      changed_when: false
+
+    - name: Démarrer Nginx (workaround environnement conteneur sans systemd)
+      ansible.builtin.command: nginx
+      register: nginx_start
+      failed_when: false
+      changed_when: nginx_start.rc == 0
+
+  handlers:
+    - name: Recharger Nginx
+      ansible.builtin.command: nginx -s reload
+      failed_when: false

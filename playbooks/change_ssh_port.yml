@@ -1,0 +1,22 @@
+---
+- name: Changer le port SSH par défaut vers 2002
+  hosts: web1
+  become: true
+  vars:
+    new_ssh_port: 2002
+
+  tasks:
+    - name: Modifier le port SSH dans sshd_config
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port'
+        line: "Port {{ new_ssh_port }}"
+        state: present
+
+    - name: Vérifier la syntaxe de la configuration SSH
+      ansible.builtin.command: sshd -t
+      changed_when: false
+
+    - name: Recharger la configuration SSH (SIGHUP, sans tuer le PID 1)
+      ansible.builtin.command: pkill -HUP -x sshd
+      changed_when: false

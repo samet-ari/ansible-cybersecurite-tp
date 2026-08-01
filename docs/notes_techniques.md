@@ -63,3 +63,16 @@ a été conçu pour tenter Suricata puis, en cas d'échec, basculer
 automatiquement sur Snort - une approche robuste qui fonctionnerait sans
 modification sur un dépôt Debian standard ou une VM de production. Cette
 limitation est propre à l'image de conteneur utilisée pour ce TP.
+
+## Changement de port SSH (Job 5.1)
+
+Le changement du port SSH (22 -> 2002) sur `web1` a nécessité une adaptation
+propre à l'environnement Docker : une fois `sshd` rechargé sur le nouveau
+port, le mapping de port du conteneur (`-p 2201:22`) devenait obsolète et la
+connexion était perdue. Solution : `docker commit` du conteneur en cours
+(pour préserver tout le travail effectué - Nginx, utilisateurs, certificats,
+Filebeat) suivi d'une recréation du conteneur avec le mapping corrigé
+(`-p 2201:2002`). Cette approche illustre une limitation propre aux
+conteneurs (le mapping de port est figé à la création) qui n'existerait pas
+sur une VM classique, où il suffit de rouvrir une session SSH sur le
+nouveau port.

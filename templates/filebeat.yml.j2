@@ -21,6 +21,16 @@ filebeat.modules:
       enabled: true
 {% endif %}
 
+{% if 'webservers' in group_names %}
+  - module: nginx
+    access:
+      enabled: true
+      var.paths: ["/var/log/nginx/access.log"]
+    error:
+      enabled: true
+      var.paths: ["/var/log/nginx/error.log"]
+{% endif %}
+
 output.console:
   enabled: true
   pretty: true

@@ -53,3 +53,13 @@ paramètres réseau du noyau nécessite un accès étendu au namespace réseau
 Les valeurs sont néanmoins correctement écrites dans `/etc/sysctl.conf` par
 Ansible - seul le rechargement à chaud (`sysctl --system`) échoue. Sur une VM
 de production, cette étape fonctionne normalement.
+
+## IDS/IPS - Suricata/Snort (Job 4.1)
+
+Ni Suricata ni Snort ne sont disponibles dans les dépôts APT de ce conteneur
+Debian (celui-ci utilise un miroir figé via `snapshot.debian.org`, dans lequel
+ces paquets IDS ne sont pas présents). Le playbook `playbooks/deploy_ids.yml`
+a été conçu pour tenter Suricata puis, en cas d'échec, basculer
+automatiquement sur Snort - une approche robuste qui fonctionnerait sans
+modification sur un dépôt Debian standard ou une VM de production. Cette
+limitation est propre à l'image de conteneur utilisée pour ce TP.

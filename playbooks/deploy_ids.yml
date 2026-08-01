@@ -1,0 +1,39 @@
+---
+- name: Déployer un IDS/IPS simple (Suricata ou Snort selon disponibilité)
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Détecter l'interface réseau principale
+      ansible.builtin.set_fact:
+        main_interface: "{{ ansible_default_ipv4.interface | default('eth0') }}"
+
+    - name: Afficher l'interface détectée
+      ansible.builtin.debug:
+        msg: "Interface réseau principale : {{ main_interface }}"
+
+    - name: Tenter l'installation de Suricata
+      ansible.builtin.apt:
+        name: suricata
+        state: present
+        update_cache: yes
+      register: suricata_result
+      ignore_errors: true
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Tenter l'installation de Snort si Suricata indisponible
+      ansible.builtin.apt:
+        name: snort
+        state: present
+      register: snort_result
+      ignore_errors: true
+      when:
+        - ansible_facts['os_family'] == "Debian"
+        - suricata_result is failed
+
+    - name: Afficher le statut de l'installation IDS
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'Suricata installé avec succès' if suricata_result is succeeded
+             else ('Snort installé avec succès' if snort_result is succeeded
+             else 'ATTENTION - ni Suricata ni Snort disponibles dans les dépôts de ce conteneur (limitation environnement de lab)') }}

@@ -1,0 +1,32 @@
+---
+- name: Collecter et afficher des faits spécifiques via le module setup
+  hosts: all_servers
+  become: true
+
+  tasks:
+    - name: Collecter tous les faits du système (module setup)
+      ansible.builtin.setup:
+
+    - name: Afficher la version du système d'exploitation
+      ansible.builtin.debug:
+        msg: "OS : {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+
+    - name: Afficher la quantité de RAM
+      ansible.builtin.debug:
+        msg: "RAM totale : {{ ansible_facts['memtotal_mb'] }} Mo"
+
+    - name: Afficher l'architecture du processeur
+      ansible.builtin.debug:
+        msg: "Architecture : {{ ansible_facts['architecture'] }}"
+
+    - name: Afficher l'adresse IP principale
+      ansible.builtin.debug:
+        msg: "Adresse IP : {{ ansible_facts['default_ipv4']['address'] | default('non disponible') }}"
+
+    - name: Afficher le nombre de processeurs
+      ansible.builtin.debug:
+        msg: "Nombre de CPU : {{ ansible_facts['processor_vcpus'] | default(ansible_facts['processor_count']) }}"
+
+    - name: Afficher le temps de fonctionnement (uptime en secondes depuis le démarrage)
+      ansible.builtin.debug:
+        msg: "Système démarré depuis (epoch) : {{ ansible_facts['date_time']['epoch'] }}"

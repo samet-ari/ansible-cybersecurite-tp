@@ -1,0 +1,63 @@
+---
+- name: Simuler une réponse à incident - fichier suspect détecté
+  hosts: webservers
+  become: true
+  vars:
+    suspect_file: /tmp/malicious_script.sh
+    quarantine_dir: /var/quarantine
+    compromised_service: nginx
+
+  tasks:
+    - name: Détecter la présence du fichier suspect
+      ansible.builtin.stat:
+        path: "{{ suspect_file }}"
+      register: suspect_stat
+
+    - name: Afficher le résultat de la détection
+      ansible.builtin.debug:
+        msg: >-
+          {{ 'Fichier suspect détecté : ' + suspect_file if suspect_stat.stat.exists
+             else 'Aucun fichier suspect détecté' }}
+
+    - name: Créer le répertoire de quarantaine
+      ansible.builtin.file:
+        path: "{{ quarantine_dir }}"
+        state: directory
+        mode: '0700'
+        owner: root
+        group: root
+      when: suspect_stat.stat.exists
+
+    - name: Arrêter le service potentiellement compromis (si présent)
+      ansible.builtin.systemd:
+        name: "{{ compromised_service }}"
+        state: stopped
+      when: suspect_stat.stat.exists
+      ignore_errors: true
+
+    - name: Déplacer le fichier suspect vers la quarantaine
+      ansible.builtin.command: >
+        mv {{ suspect_file }} {{ quarantine_dir }}/malicious_script_{{ ansible_date_time.iso8601_basic_short }}.sh
+      when: suspect_stat.stat.exists
+
+    - name: Collecter les informations de diagnostic - logs récents
+      ansible.builtin.shell: tail -n 50 /var/log/auth.log 2>/dev/null || echo "Log non disponible"
+      register: recent_logs
+      when: suspect_stat.stat.exists
+      changed_when: false
+
+    - name: Collecter les informations de diagnostic - processus en cours
+      ansible.builtin.command: ps aux
+      register: running_processes
+      when: suspect_stat.stat.exists
+      changed_when: false
+
+    - name: Envoyer une notification dans un fichier de log local (sur le contrôleur)
+      ansible.builtin.lineinfile:
+        path: "{{ playbook_dir }}/../docs/incident_log.txt"
+        line: >-
+          [{{ ansible_date_time.iso8601 }}] ALERTE sur {{ inventory_hostname }} :
+          fichier suspect détecté et mis en quarantaine ({{ quarantine_dir }}).
+        create: true
+      delegate_to: localhost
+      when: suspect_stat.stat.exists

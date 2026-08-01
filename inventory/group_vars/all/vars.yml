@@ -1,0 +1,4 @@
+---
+# Variables générales du projet (non sensibles)
+project_name: "Ansible Cybersécurité TP - Starfleet"
+ssh_port_final: 2002
